@@ -9,6 +9,8 @@ namespace BloggBlazorServer.Models
         public string Beskrivelse { get; set; }
         public string EierId { get; set; }
 
+        public bool ErAbonnert { get; set; }
+
         public virtual ICollection<Post> Poster { get; set; }
     }
 }

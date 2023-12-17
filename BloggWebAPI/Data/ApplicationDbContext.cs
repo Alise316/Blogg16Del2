@@ -22,16 +22,10 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<Abonnement>()
-            .HasOne(a => a.Follower)
+            .HasOne(a => a.Blogg)
             .WithMany()
-            .HasForeignKey(a => a.FollowerId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        modelBuilder.Entity<Abonnement>()
-            .HasOne(a => a.Following)
-            .WithMany()
-            .HasForeignKey(a => a.FollowingId)
-            .OnDelete(DeleteBehavior.NoAction);
-
+            .HasForeignKey(a => a.BloggId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -1,0 +1,52 @@
+﻿@page "/abonnementer"
+@using BloggBlazorServer.Services
+@using BloggBlazorServer.Models
+@using Newtonsoft.Json
+@inject HttpClient httpClient
+@inject UserStateService UserStateService
+
+<h3>Abonnementer</h3>
+
+@if (abonnerteBlogger != null && abonnerteBlogger.Count > 0)
+{
+    foreach (var blogg in abonnerteBlogger)
+    {
+        <div>
+            <p>
+                <strong>Tittel:</strong>
+                <a href="/blogg/@blogg.BloggId">@blogg.Tittel</a>
+            </p>
+            <p>Beskrivelse: @blogg.Beskrivelse</p>
+        </div>
+    }
+}
+else
+{
+    <p>Ingen abonnerte blogger funnet.</p>
+}
+
+
+
+@code {
+    private List<Blogg> abonnerteBlogger;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserStateService.IsLoggedIn)
+        {
+            var userId = UserStateService.CurrentUserId;
+            var response = await httpClient.GetAsync($"api/abonnement/{userId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                abonnerteBlogger = JsonConvert.DeserializeObject<List<Blogg>>(content);
+            }
+            else
+            {
+                Console.WriteLine("Feil ved henting av abonnerte blogger.");
+            }
+        }
+    }
+
+}

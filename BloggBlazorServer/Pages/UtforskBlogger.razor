@@ -1,7 +1,9 @@
 ﻿@page "/utforsk-blogger"
 @inject HttpClient httpClient
 @inject NavigationManager NavigationManager
+@inject UserStateService UserStateService
 @using BloggBlazorServer.Models
+@using BloggBlazorServer.Services
 
 <h3>Utforsk Blogger</h3>
 
@@ -11,14 +13,23 @@
 }
 else
 {
-    foreach (var blogg in blogger)
+    @foreach (var blogg in blogger)
     {
-        <div class="blogg-entry" @onclick="() => GåTilBlogg(blogg.BloggId)">
+        <div class="blogg-entry">
             <h4>@blogg.Tittel</h4>
             <p>@blogg.Beskrivelse</p>
-            <button @onclick="() => Abonner(blogg.BloggId)">Abonner</button>
+
+            @if (blogg.ErAbonnert && UserStateService.IsLoggedIn)
+            {
+                <button @onclick="() => AvsluttAbonnement(blogg.BloggId)">Avbryt abonnement</button>
+            }
+            else if (!blogg.ErAbonnert && UserStateService.IsLoggedIn)
+            {
+                <button @onclick="() => AbonnerPåBlogg(blogg.BloggId)">Abonner</button>
+            }
         </div>
     }
+
 }
 
 @code {
@@ -26,15 +37,69 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        blogger = await httpClient.GetFromJsonAsync<List<Blogg>>("api/blogg");
+        var allBlogger = await httpClient.GetFromJsonAsync<List<Blogg>>("api/blogg");
+        var userId = UserStateService.CurrentUserId;
+    
+        blogger = allBlogger.Where(b => b.EierId != userId).ToList();
     }
 
-    private void GåTilBlogg(int bloggId)
+
+    private async Task AbonnerPåBlogg(int bloggId)
     {
-        NavigationManager.NavigateTo($"/blogg/{bloggId}");
+        try
+        {
+            var userId = UserStateService.CurrentUserId;
+            var response = await httpClient.PostAsync($"api/abonnement/{userId}/{bloggId}", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var blogg = blogger.FirstOrDefault(b => b.BloggId == bloggId);
+                if (blogg != null)
+                {
+                    blogg.ErAbonnert = true;
+                }
+
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Feil ved oppretting av abonnement: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Feil ved oppretting av abonnement: {ex.Message}");
+        }
+
     }
 
-    private async Task Abonner(int bloggId)
+    private async Task AvsluttAbonnement(int bloggId)
     {
+        try
+        {
+            var userId = UserStateService.CurrentUserId;
+            var response = await httpClient.DeleteAsync($"api/abonnement/{userId}/{bloggId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var blogg = blogger.FirstOrDefault(b => b.BloggId == bloggId);
+                if (blogg != null)
+                {
+                    blogg.ErAbonnert = false;
+                }
+
+                blogger = blogger.Where(b => b.BloggId != bloggId).ToList();
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Feil ved avslutning av abonnement: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Feil ved avslutning av abonnement: {ex.Message}");
+        }
     }
+
 }

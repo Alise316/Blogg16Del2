@@ -13,6 +13,8 @@ namespace BloggWebAPI.Models
         public string Tittel { get; set; }
         public string Beskrivelse { get; set; }
 
+        public bool ErAbonnert { get; set; }
+
 
 
 
