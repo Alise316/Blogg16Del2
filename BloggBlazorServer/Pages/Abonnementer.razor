@@ -5,25 +5,68 @@
 @inject HttpClient httpClient
 @inject UserStateService UserStateService
 
+<style>
+    .container {
+        padding: 20px;
+        max-width: 800px;
+        margin: auto;
+    }
+
+    .blog-entry {
+        background-color: #f4f4f4;
+        border: 1px solid #e1e1e1;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+    }
+
+        .blog-entry a {
+            color: #0275d8;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+            .blog-entry a:hover {
+                text-decoration: underline;
+            }
+
+        .blog-entry p {
+            color: #555;
+            margin: 5px 0;
+        }
+
+    h3 {
+        text-align: center;
+        color: #333;
+    }
+
+    .no-blogs {
+        text-align: center;
+        color: #888;
+    }
+</style>
+
 <h3>Abonnementer</h3>
 
-@if (abonnerteBlogger != null && abonnerteBlogger.Count > 0)
-{
-    foreach (var blogg in abonnerteBlogger)
+<div class="container">
+    @if (abonnerteBlogger != null && abonnerteBlogger.Count > 0)
     {
-        <div>
-            <p>
-                <strong>Tittel:</strong>
-                <a href="/blogg/@blogg.BloggId">@blogg.Tittel</a>
-            </p>
-            <p>Beskrivelse: @blogg.Beskrivelse</p>
-        </div>
+        foreach (var blogg in abonnerteBlogger)
+        {
+            <div class="blog-entry">
+                <p>
+                    <strong>Tittel:</strong>
+                    <a href="/blogg/@blogg.BloggId">@blogg.Tittel</a>
+                </p>
+                <p>Beskrivelse: @blogg.Beskrivelse</p>
+            </div>
+        }
     }
-}
-else
-{
-    <p>Ingen abonnerte blogger funnet.</p>
-}
+    else
+    {
+        <p class="no-blogs">Ingen abonnerte blogger funnet.</p>
+    }
+</div>
 
 
 

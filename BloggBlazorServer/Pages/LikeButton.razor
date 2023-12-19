@@ -1,0 +1,16 @@
+﻿<button @onclick="ToggleLike" 
+        class="btn @(liked ? "btn-primary" : "btn-secondary")">
+    <i class="fas fa-thumbs-up fa-lg"></i>
+</button>
+
+@code {
+    [Parameter] public EventCallback<bool> OnLikeToggled { get; set; }
+
+    private bool liked = false;
+
+    private async Task ToggleLike()
+    {
+        liked = !liked;
+        await OnLikeToggled.InvokeAsync(liked);
+    }
+}

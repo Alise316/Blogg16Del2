@@ -3,52 +3,161 @@
 @using Newtonsoft.Json
 @inject HttpClient httpClient
 @inject UserStateService UserStateService
+@inject NavigationManager NavigationManager
+
 <style>
-    .post-container {
-        border: 1px solid #ddd;
-        padding: 10px;
-        margin-bottom: 10px;
-        background-color: #f9f9f9;
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
     }
 
-    .edit-form-container div {
-        margin-bottom: 10px;
+    h3 {
+        color: #333;
+        text-align: center;
+    }
+
+    .post-container {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .edit-form-container {
+        background-color: white;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+        .edit-form-container div {
+            margin-bottom: 15px;
+        }
+
+    .form-control, .btn {
+        border-radius: 4px;
+        padding: 10px;
+    }
+
+    .blog-title {
+        color: #007bff;
+        margin-top: 20px;
+        font-weight: bold;
+    }
+
+    .blog-description {
+        font-style: italic;
         margin-bottom: 20px;
     }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+        cursor: pointer;
+        padding: 8px 12px;
+        font-size: 14px;
+        border-radius: 4px;
+    }
+
+            
+
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #004085;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+
+    .alert {
+        padding: 10px;
+        margin-top: 20px;
+        border-radius: 4px;
+        color: white;
+    }
+
+    .post-info {
+        margin-top: 10px;
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    .text-success {
+        color: #28a745;
+    }
+
+    .text-danger {
+        color: #dc3545;
+    }
+
+    a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+    .register-link {
+        margin-top: 15px;
+        text-align: center;
+    }
+
+        .register-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+            .register-link a:hover {
+                text-decoration: underline;
+            }
 </style>
 
 
-<h3>Min Blogg</h3>
+<div class="page-container">
+    <h3>Min Blogg</h3>
 
-@if (isLoading)
-{
-    <p>Laster blogginnhold...</p>
-}
-else if (UserStateService.IsLoggedIn)
-{
-    <p>Velkommen til din blogg, @currentUser?.UserName!</p>
-    <p>Din bruker-ID er: @UserStateService.CurrentUserId</p>
-
-    @if (blog != null)
+    @if (isLoading)
     {
-        <a href="configure-blog">Endre Blogg</a>
-        <p>Tittel: @blog.Tittel</p>
-        <p>Beskrivelse: @blog.Beskrivelse</p>
+        <p>Laster blogginnhold...</p>
+    }
+    else if (UserStateService.IsLoggedIn)
+    {
+        <p>Velkommen til din blogg, @currentUser?.UserName!</p>
+
+        @if (blog != null)
+        {
+            <a href="/editblog/@blog.BloggId">Rediger Blogg</a>
+            <h4 class="blog-title">@blog.Tittel</h4>
+            <p class="blog-description">@blog.Beskrivelse</p>
 
         <EditForm Model="@newPost" OnValidSubmit="HandleSubmit" class="edit-form-container">
-            <div>
-                <InputText id="title" @bind-Value="newPost.Tittel" placeholder="Tittel på innlegg" />
-            </div>
-            <div>
-                <InputTextArea id="content" @bind-Value="newPost.Innhold" placeholder="Innhold i innlegget" />
-            </div>
-            <div>
-                <button type="submit" class="btn btn-primary">Publiser Innlegg</button>
-            </div>
-        </EditForm>
+    <div>
+        <InputText id="title" class="form-control" @bind-Value="newPost.Tittel" placeholder="Tittel på innlegg" />
+    </div>
+    <div>
+        <InputTextArea id="content" class="form-control" @bind-Value="newPost.Innhold" placeholder="Innhold i innlegget" />
+    </div>
+    <div>
+        <button type="submit" class="btn btn-primary">Publiser Innlegg</button>
+    </div>
+</EditForm>
+
 
 
 
@@ -71,24 +180,24 @@ else
     <p>Du må være logget inn for å se din blogg.</p>
 }
 
-@if (blog?.Posts?.Count > 0)
-{
-    <h4>Innlegg i Bloggen</h4>
-    @foreach (var post in blog.Posts)
+    @if (blog?.Posts?.Count > 0)
     {
-        <div class="post-container">
-            <h5>@post.Tittel</h5>
-            <p>@post.Innhold</p>
-            <button @onclick="() => DeletePost(post.PostId)" class="btn btn-danger">Slett</button>
-        </div>
+        @foreach (var post in blog.Posts)
+        {
+            <div class="post-container" @onclick="() => GåTilPost(post.PostId)">
+                <h5>@post.Tittel</h5>
+                <p>@post.Innhold</p>
+                <div>
+                    <span>@post.AntallLikes Likes</span> | 
+                    <span>@post.AntallKommentarer Kommentarer</span>
+                </div>
+                <button @onclick="() => DeletePost(post.PostId)" class="btn btn-danger">Slett</button>
+            </div>
+        }
     }
-}
-else
-{
-    <p>Ingen innlegg funnet for denne bloggen.</p>
-}
 
 
+</div>
 
 @code {
     private Blogg blog;
@@ -193,12 +302,17 @@ else
         var response = await httpClient.DeleteAsync($"api/Post/{postId}");
         if (response.IsSuccessStatusCode)
         {
-   
-            await FetchPosts();
+            NavigationManager.NavigateTo("/confirmation");
         }
         else
         {
         }
+    }
+
+
+    private void GåTilPost(int postId)
+    {
+        NavigationManager.NavigateTo($"/post/{postId}");
     }
 
 
@@ -211,6 +325,8 @@ else
         public string Innhold { get; set; }
         public DateTime Opprettet { get; set; }
         public string Tags { get; set; }
+        public int AntallLikes { get; set; }    // Nytt felt for antall likerklikk
+        public int AntallKommentarer { get; set; } // Nytt felt for antall kommentarer
     }
 
 

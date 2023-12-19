@@ -4,6 +4,80 @@
 @inject HttpClient httpClient
 @inject UserStateService UserStateService
 
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+    }
+
+    h3 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .post-content-box {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+    }
+
+    .comment-box {
+        background-color: #e9ecef;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+    }
+
+        .comment-box textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+    .comment-entry {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 10px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+</style>
+
 
 @if (post != null)
 {
@@ -31,10 +105,12 @@ else
 
 @if (kommentarer != null)
 {
-    foreach (var kommentar in kommentarer)
+    @foreach (var kommentar in kommentarer)
     {
         <div class="comment-entry">
-            <p><strong>@kommentar.ForfatterNavn:</strong> @kommentar.Innhold (@kommentar.Opprettet.ToString("yyyy-MM-dd HH:mm"))</p>
+            <p><strong>@kommentar.ForfatterNavn:</strong> @kommentar.Innhold</p>
+            <button @onclick="() => LikeKommentar(kommentar.KommentarId)">Like</button>
+            <span>@kommentar.AntallLikes Likes</span>
         </div>
     }
 }
@@ -81,10 +157,14 @@ else
             if (response.IsSuccessStatusCode)
             {
                 var lagtTilKommentar = await response.Content.ReadFromJsonAsync<Kommentar>();
+                lagtTilKommentar.ForfatterNavn = UserStateService.CurrentUserName;
+
                 kommentarer.Add(lagtTilKommentar);
                 newComment = new Kommentar();
                 submissionMessage = "Kommentaren ble publisert.";
                 submissionMessageClass = "text-success";
+
+                post.AntallKommentarer++;
             }
             else
             {
@@ -101,12 +181,30 @@ else
     }
 
 
+    private async Task LikeKommentar(int kommentarId)
+    {
+        var response = await httpClient.PostAsync($"api/Like/kommentar/{kommentarId}", null);
+        if (response.IsSuccessStatusCode)
+        {
+            var updatedKommentar = await httpClient.GetFromJsonAsync<Kommentar>($"api/kommentar/{kommentarId}");
+            var kommentarToUpdate = kommentarer.FirstOrDefault(k => k.KommentarId == kommentarId);
+            if (kommentarToUpdate != null)
+            {
+                kommentarToUpdate.AntallLikes = updatedKommentar.AntallLikes;
+            }
+        }
+    }
+
+
     public class Kommentar
     {
+        public int KommentarId { get; set; }
         public string Innhold { get; set; }
         public int PostId { get; set; }
         public string ForfatterId { get; set; }
         public string ForfatterNavn { get; set; }
         public DateTime Opprettet { get; set; }
+        public int AntallLikes { get; set; }
+
     }
 }

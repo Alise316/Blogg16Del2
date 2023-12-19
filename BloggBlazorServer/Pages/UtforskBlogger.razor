@@ -5,32 +5,82 @@
 @using BloggBlazorServer.Models
 @using BloggBlazorServer.Services
 
-<h3>Utforsk Blogger</h3>
-
-@if (blogger == null)
-{
-    <p>Laster blogger...</p>
-}
-else
-{
-    @foreach (var blogg in blogger)
-    {
-        <div class="blogg-entry">
-            <h4>@blogg.Tittel</h4>
-            <p>@blogg.Beskrivelse</p>
-
-            @if (blogg.ErAbonnert && UserStateService.IsLoggedIn)
-            {
-                <button @onclick="() => AvsluttAbonnement(blogg.BloggId)">Avbryt abonnement</button>
-            }
-            else if (!blogg.ErAbonnert && UserStateService.IsLoggedIn)
-            {
-                <button @onclick="() => AbonnerPåBlogg(blogg.BloggId)">Abonner</button>
-            }
-        </div>
+<style>
+    .container {
+        padding: 20px;
+        max-width: 800px;
+        margin: auto;
     }
 
-}
+    .blogg-entry {
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        transition: box-shadow 0.3s;
+    }
+
+        .blogg-entry:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .blogg-entry h4 {
+            color: #333;
+            margin-top: 0;
+        }
+
+        .blogg-entry p {
+            color: #666;
+        }
+
+        .blogg-entry button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+            .blogg-entry button:hover {
+                background-color: #45a049;
+            }
+</style>
+
+<h3>Utforsk Blogger</h3>
+
+<div class="container">
+    @if (blogger == null)
+    {
+        <p>Laster blogger...</p>
+    }
+    else
+    {
+        @foreach (var blogg in blogger)
+        {
+            <div class="blogg-entry" @onclick="() => GåTilBlogg(blogg.BloggId)">
+                <h4>@blogg.Tittel</h4>
+                <p>@blogg.Beskrivelse</p>
+
+                @if (blogg.ErAbonnert)
+                {
+                    <button @onclick="() => AvsluttAbonnement(blogg.BloggId)">Avbryt abonnement</button>
+                }
+                else
+                {
+                    <button @onclick="() => AbonnerPåBlogg(blogg.BloggId)">Abonner</button>
+                }
+            </div>
+        }
+    }
+</div>
 
 @code {
     private List<Blogg> blogger;
@@ -41,6 +91,11 @@ else
         var userId = UserStateService.CurrentUserId;
     
         blogger = allBlogger.Where(b => b.EierId != userId).ToList();
+    }
+
+    private void GåTilBlogg(int bloggId)
+    {
+        NavigationManager.NavigateTo($"/blogg/{bloggId}");
     }
 
 
@@ -71,6 +126,18 @@ else
             Console.WriteLine($"Feil ved oppretting av abonnement: {ex.Message}");
         }
 
+        OppdaterAbonnementStatus(bloggId, true);
+
+    }
+
+    private void OppdaterAbonnementStatus(int bloggId, bool erAbonnert)
+    {
+        var blogg = blogger.FirstOrDefault(b => b.BloggId == bloggId);
+        if (blogg != null)
+        {
+            blogg.ErAbonnert = erAbonnert;
+            StateHasChanged();
+        }
     }
 
     private async Task AvsluttAbonnement(int bloggId)

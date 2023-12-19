@@ -1,0 +1,16 @@
+﻿@page "/confirmation"
+@inject NavigationManager NavigationManager
+
+<h3>Sletting fullført</h3>
+<p>Innlegget er slettet. Du vil bli omdirigert tilbake til bloggen om noen sekunder...</p>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Task.Run(async () =>
+        {
+            await Task.Delay(1);
+            NavigationManager.NavigateTo("/min-blogg");
+        });
+    }
+}

@@ -4,66 +4,133 @@
 @inject NavigationManager NavigationManager
 @using BloggBlazorServer.Services
 @inject SearchService SearchService
+@implements IDisposable
 
+<style>
+    h3, h4 {
+        color: #4A4A4A;
+        margin-bottom: 15px;
+    }
 
+    .search-results p {
+        color: #555555;
+        margin-bottom: 5px;
+        cursor: pointer;
+        text-decoration: underline;
+    }
 
+    .search-results p:hover {
+        color: #007bff;
+    }
 
+    .search-results {
+        padding: 15px;
+    }
+
+    .search-category {
+        margin-top: 20px;
+    }
+</style>
 
 <h3>Søkeresultater</h3>
 
-@if (searchResults != null)
-{
-    <div>
-        <h4>Poster</h4>
-        @foreach (var post in searchResults.Poster)
-        {
-            <p>@post.Tittel</p>
-        }
+<div class="search-results">
+    <InputText @bind-Value="searchModel.SearchTerm" @oninput="OnInputChanged" class="InputText" placeholder="Skriv inn søkeord..." />
 
-        <h4>Blogger</h4>
-        @foreach (var blogg in searchResults.Blogger)
-        {
-            <p>@blogg.Tittel</p>
-        }
 
-        <h4>Kommentarer</h4>
-        @foreach (var kommentar in searchResults.Kommentarer)
-        {
-            <p>@kommentar.Innhold</p>
-        }
-        
-        <h4>Brukere</h4>
-        @foreach (var user in searchResults.Users)
-        {
-            <p>@user.UserName</p>
-        }
-    </div>
-}
-else
-{
-    <p>Ingen resultater funnet.</p>
-}
+    @if (searchResults != null)
+    {
+        <div class="search-results">
+            <div class="search-category">
+                <h4>Poster</h4>
+                @foreach (var post in searchResults.Poster)
+                {
+                    <p @onclick="() => NavigateToPost(post.PostId)">@post.Tittel</p>
+                }
+            </div>
+
+            <div class="search-category">
+                <h4>Blogger</h4>
+                @foreach (var blogg in searchResults.Blogger)
+                {
+                    <p @onclick="() => NavigateToBlog(blogg.BloggId)">@blogg.Tittel</p>
+                }
+            </div>
+
+        </div>
+    }
+    else
+    {
+        <p>Ingen resultater funnet.</p>
+    }
+
+</div>
 
 @code {
-    private SearchResult searchResults;
+    private SearchModel searchModel = new SearchModel();
+    private Timer? searchDebounceTimer;
+    private SearchResult? searchResults;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await UpdateSearchResults();
+        searchModel.OnSearchTermChanged += SearchTermChanged;
     }
 
-    protected override async Task OnParametersSetAsync()
+    private void OnInputChanged(ChangeEventArgs e)
     {
-        await UpdateSearchResults();
+        searchModel.SearchTerm = e.Value?.ToString() ?? string.Empty;
     }
 
-    private async Task UpdateSearchResults()
+    private void SearchTermChanged(string searchTerm)
     {
-        var uri = new Uri(NavigationManager.Uri);
-        var query = HttpUtility.ParseQueryString(uri.Query).Get("query");
-        if (!string.IsNullOrEmpty(query))
+        searchDebounceTimer?.Dispose();
+        searchDebounceTimer = new Timer(DebounceSearch, searchTerm, TimeSpan.FromMilliseconds(500), Timeout.InfiniteTimeSpan);
+    }
+
+    private async void DebounceSearch(object? state)
+    {
+        var searchTerm = (string?)state;
+        if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            searchResults = await SearchService.SearchAsync(query);
+            searchResults = await SearchService.SearchAsync(searchTerm);
+            InvokeAsync(StateHasChanged);
         }
     }
+
+    public void Dispose()
+    {
+        searchDebounceTimer?.Dispose();
+        searchModel.OnSearchTermChanged -= SearchTermChanged;
+    }
+    public class SearchModel
+    {
+        private string searchTerm = string.Empty;
+
+        public string SearchTerm
+        {
+            get => searchTerm;
+            set
+            {
+                if (searchTerm != value)
+                {
+                    searchTerm = value;
+                    OnSearchTermChanged?.Invoke(value);
+                }
+            }
+        }
+
+        public event Action<string>? OnSearchTermChanged;
+    }
+
+    private void NavigateToPost(int postId)
+    {
+        NavigationManager.NavigateTo($"/post/{postId}");
+    }
+
+    private void NavigateToBlog(int bloggId)
+    {
+        NavigationManager.NavigateTo($"/blogg/{bloggId}");
+    }
 }
+
+

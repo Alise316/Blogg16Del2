@@ -1,9 +1,106 @@
 ﻿@page "/"
+@inject HttpClient httpClient
+@inject NavigationManager NavigationManager
+@using BloggBlazorServer.Models
+<style>
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f4f4f4;
+    color: #333;
+}
 
-<PageTitle>Index</PageTitle>
+main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
 
-<h1>Hello, world!</h1>
+header h1 {
+    color: #2c3e50;
+    text-align: center;
+}
 
-Welcome to your new app.
+section p, .featured-blogs p {
+    line-height: 1.6;
+}
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 20px;
+    border-top: 1px solid #ccc;
+}
+
+.featured-blogs {
+    margin-top: 40px;
+}
+
+.blogg-entry {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.blogg-entry h4 {
+    margin-top: 0;
+}
+
+.blogg-entry p {
+    color: #555;
+}
+</style>
+
+<PageTitle>Din Bloggplattform</PageTitle>
+
+<main>
+    <header>
+        <h1>Velkommen til BlazorBlogg</h1>
+    </header>
+
+    <section>
+        <p>Oppdag, skriv og del dine historier med verden.</p>
+    </section>
+
+    <div class="featured-blogs">
+        <h2>Dagens Blogger</h2>
+        @if (rndBlogger == null)
+        {
+            <p>Laster blogger...</p>
+        }
+        else
+        {
+            foreach (var blogg in rndBlogger)
+            {
+                <div class="blogg-entry" @onclick="() => GåTilBlogg(blogg.BloggId)">
+                    <h4>@blogg.Tittel</h4>
+                    <p>@blogg.Beskrivelse</p>
+                </div>
+            }
+        }
+    </div>
+
+    <footer>
+        <p>&copy; 2023 BlazorBlogg</p>
+    </footer>
+</main>
+
+@code {
+    private List<Blogg> rndBlogger;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var alleBlogger = await httpClient.GetFromJsonAsync<List<Blogg>>("api/blogg");
+        rndBlogger = alleBlogger.OrderBy(x => Guid.NewGuid()).Take(2).ToList();
+    }
+
+    private void GåTilBlogg(int bloggId)
+    {
+        NavigationManager.NavigateTo($"/blogg/{bloggId}");
+    }
+}

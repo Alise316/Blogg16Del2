@@ -3,6 +3,54 @@
 @inject HttpClient httpClient
 @inject NavigationManager NavigationManager
 
+<style>
+    h3 {
+        text-align: center;
+        color: #4A4A4A;
+    }
+
+    .post-entry {
+        background-color: #f8f8f8;
+        border: 1px solid #eaeaea;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+    }
+
+        .post-entry h5 {
+            color: #333333;
+            margin-top: 0;
+        }
+
+        .post-entry p {
+            color: #555555;
+        }
+
+    button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin: 10px 0;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+    .alert {
+        color: #004085;
+        background-color: #cce5ff;
+        border-color: #b8daff;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 20px;
+    }
+</style>
+
 <h3>@blogg?.Tittel</h3>
 <p>@blogg?.Beskrivelse</p>
 
@@ -18,11 +66,19 @@ else
 {
     @foreach (var post in innlegg)
     {
-        <div class="post-entry" @onclick="() => GåTilPost(post.PostId)">
+        <div class="post-entry">
             <h5>@post.Tittel</h5>
             <p>@post.Innhold</p>
+            <button @onclick="() => LikePost(post.PostId)" @onclick:stopPropagation="true">Like</button>
+            <span>@post.AntallLikes Likes</span>
+            <button @onclick="() => GåTilPost(post.PostId)">Les mer</button>
         </div>
     }
+}
+
+@if (!string.IsNullOrWhiteSpace(responseMessage))
+{
+    <div class="alert alert-info">@responseMessage</div>
 }
 
 @code {
@@ -31,15 +87,45 @@ else
 
     private Blogg blogg;
     private List<Post> innlegg;
+    private string responseMessage;
 
     private void GåTilPost(int postId)
     {
         NavigationManager.NavigateTo($"/post/{postId}");
     }
 
+    private async Task LikePost(int postId)
+    {
+        try
+        {
+            var response = await httpClient.PostAsync($"api/Like/{postId}", null);
+            responseMessage = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var postToUpdate = innlegg.FirstOrDefault(p => p.PostId == postId);
+                if (postToUpdate != null)
+                {
+                    postToUpdate.AntallLikes++;
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+            }
+        }
+        catch (Exception ex)
+        {
+            responseMessage = "Feil ved forsøk på å like innlegget: " + ex.Message;
+        }
+    }
+
+
     protected override async Task OnInitializedAsync()
     {
         blogg = await httpClient.GetFromJsonAsync<Blogg>($"api/Blogg/{BloggId}");
         innlegg = await httpClient.GetFromJsonAsync<List<Post>>($"api/Blogg/{BloggId}/innlegg");
     }
+
+
 }

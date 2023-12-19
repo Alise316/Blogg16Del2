@@ -6,6 +6,46 @@
 @inject NavigationManager NavigationManager
 @inject SearchService SearchService
 
+<style>
+    .navbar-collapse {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .navbar-nav .EditForm {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-right: 15px;
+    }
+
+    .navbar-nav .InputText {
+        border: 2px solid #ddd;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    .navbar-nav button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+        .navbar-nav button:hover {
+            background-color: #45a049;
+        }
+
+</style>
 
 
 <div class="top-row ps-3 navbar navbar-dark">
@@ -17,32 +57,22 @@
     </div>
 </div>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="navbar-collapse">
-            <div class="navbar-nav ml-auto">
-                <EditForm Model="@searchModel" OnValidSubmit="@OnSearch">
-                    <InputText @bind-Value="searchModel.SearchTerm"/>
-                    <button type="submit">Søk</button>
-                </EditForm>
-            </div>
-        </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
+                <span class="oi oi-home" aria-hidden="true"></span> Hjem
             </NavLink>
         </div>
         @if (!UserStateService.IsLoggedIn)
         {
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="register">
-                    <span class="oi oi-pencil" aria-hidden="true"></span> Register
+                    <span class="oi oi-pencil" aria-hidden="true"></span> Registrer bruker
                 </NavLink>
             </div>
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="login">
-                    <span class="oi oi-account-login" aria-hidden="true"></span> Login
+                    <span class="oi oi-account-login" aria-hidden="true"></span> Logg inn
                 </NavLink>
             </div>
         }
@@ -61,27 +91,28 @@
             </NavLink>
             </div>
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="user-List">
-                    <span class="oi oi-list-rich" aria-hidden="true"></span> Users
-                </NavLink>
-            </div>
-            <div class="nav-item px-3">
                 <NavLink class="nav-link" href="chatroom">
                     <span class="oi oi-chat" aria-hidden="true"></span> Chat
                 </NavLink>
             </div>
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="logout">
-                    <span class="oi oi-account-logout" aria-hidden="true"></span> Logout
+                <NavLink class="nav-link" href="utforsk-blogger">
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> Utforsk Blogger
                 </NavLink>
             </div>
-            <NavLink class="nav-link" href="utforsk-blogger">
-                <span class="oi oi-list-rich" aria-hidden="true"></span> Utforsk Blogger
-            </NavLink>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="search">
+            <span class="oi oi-magnifying-glass" aria-hidden="true"></span> Søk
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="logout">
+                    <span class="oi oi-account-logout" aria-hidden="true"></span> Logg ut
+                </NavLink>
+            </div>
+            
 
         }
-    </nav>
-</div>
 
 @code {
     private bool collapseNavMenu = true;
@@ -100,7 +131,6 @@
 
     private void OnSearch()
     {
-    // Naviger til omdirigeringssiden med søkeordet
         NavigationManager.NavigateTo($"/redirect?query={searchModel.SearchTerm}");
     }
 

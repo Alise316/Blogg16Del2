@@ -16,6 +16,7 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
     public DbSet<Tagg> Tagger { get; set; }
     public DbSet<Abonnement> Abonnementer { get; set; }
     public DbSet<Notifikasjon> Notifikasjoner { get; set; }
+    public DbSet<Like> Likes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +27,18 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
             .WithMany()
             .HasForeignKey(a => a.BloggId)
             .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Like>()
+            .HasOne(l => l.Post)
+            .WithMany(p => p.Likes)
+            .HasForeignKey(l => l.PostId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Like>()
+            .HasOne(l => l.Kommentar)
+            .WithMany(k => k.Likes)
+            .HasForeignKey(l => l.KommentarId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -1,0 +1,117 @@
+﻿@page "/editblog/{BloggId:int}"
+@using BloggBlazorServer.Models
+@using BloggBlazorServer.Services
+@inject HttpClient httpClient
+
+<style>
+    .edit-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background: white;
+    }
+
+    .edit-header {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .form-input, .form-textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .form-textarea {
+        min-height: 100px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .text-success {
+        color: green;
+    }
+
+    .text-danger {
+        color: red;
+    }
+
+</style>
+
+
+<div class="edit-container">
+    <h3 class="edit-header">Rediger Blogg</h3>
+
+    <EditForm Model="@blog" OnValidSubmit="@OppdaterBlogg" class="edit-form">
+        <div class="form-group">
+            <label for="title" class="form-label">Tittel:</label>
+            <InputText id="title" class="form-input" @bind-Value="blog.Tittel" />
+        </div>
+        <div class="form-group">
+            <label for="description" class="form-label">Beskrivelse:</label>
+            <InputTextArea id="description" class="form-textarea" @bind-Value="blog.Beskrivelse" />
+        </div>
+        <button type="submit" class="btn btn-primary">Lagre Endringer</button>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(submissionMessage))
+    {
+        <p class="@submissionMessageClass">@submissionMessage</p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int BloggId { get; set; }
+
+    private Blogg blog = new Blogg();
+    private string submissionMessage;
+    private string submissionMessageClass;
+
+    protected override async Task OnInitializedAsync()
+    {
+        blog = await httpClient.GetFromJsonAsync<Blogg>($"api/Blogg/{BloggId}");
+    }
+
+    private async Task OppdaterBlogg()
+    {
+        var response = await httpClient.PutAsJsonAsync($"api/Blogg/{blog.BloggId}", blog);
+
+        if (response.IsSuccessStatusCode)
+        {
+            submissionMessage = "Bloggen er oppdatert.";
+            submissionMessageClass = "text-success";
+        }
+        else
+        {
+            submissionMessage = "Det oppstod en feil ved oppdatering av bloggen.";
+            submissionMessageClass = "text-danger";
+        }
+    }
+}
